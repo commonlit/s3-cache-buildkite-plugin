@@ -1,4 +1,4 @@
-version: '3.7'
+version: "3.7"
 
 services:
   tests:
@@ -7,12 +7,18 @@ services:
       - ".:/plugin:ro"
   lint:
     image: buildkite/plugin-linter:v2.0.3
-    command: ['--id', 'peakon/s3-cache']
+    command: ["--id", "commonlit/s3-cache"]
     volumes:
       - ".:/plugin:ro"
   shellcheck:
     image: koalaman/shellcheck-alpine:latest
     working_dir: "/plugin"
-    command: ["shellcheck", "lib/functions.bash", "hooks/pre-command", "hooks/post-command"]
+    command:
+      [
+        "shellcheck",
+        "lib/functions.bash",
+        "hooks/pre-command",
+        "hooks/post-command",
+      ]
     volumes:
       - ".:/plugin"
