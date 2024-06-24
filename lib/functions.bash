@@ -6,14 +6,14 @@ else
   aws_cli_args=()
 fi
 
-# returns a JSON object with plugin configuration 
+# returns a JSON object with plugin configuration
 function getPluginConfig {
   local config
-  config=$(echo "$BUILDKITE_PLUGINS" | jq '. | map(to_entries) | flatten | map(select(.key | match("peakon/s3-cache";"i"))) | map(.value)')
+  config=$(echo "$BUILDKITE_PLUGINS" | jq '. | map(to_entries) | flatten | map(select(.key | match("commonlit/s3-cache";"i"))) | map(.value)')
   if [[ "$config" == "null" ]]; then
-      echo "peakon/s3-cache plugin is misconfigured"
+      echo "commonlit/s3-cache plugin is misconfigured"
       exit 1
-  else 
+  else
     echo "$config"
   fi
 }
@@ -126,6 +126,7 @@ function s3Restore {
 
 function makeTempFile {
   tempFile=$(mktemp)
+  # shellcheck disable=SC2329
   cleanup() {
     # shellcheck disable=SC2317
     rm "$tempFile"
@@ -149,10 +150,10 @@ function saveCache {
   while read -r keyTemplateBase64 pathsBase64 overwrite when
   do
     keyTemplate=$(echo "$keyTemplateBase64" | base64 -d)
-    
+
     key=$(getCacheKey "$keyTemplate")
     paths=$(echo "$pathsBase64" | base64 -d)
-    
+
     if [[ ! "$when" =~ ^(on_success|on_failure|always)$ ]]; then
       echo ":warn: invalid value specified for 'when' option ($when), ignoring"
       when="on_success"
@@ -167,7 +168,7 @@ function saveCache {
     else
       uploadConditions="^(on_success|always)$"
     fi
-    
+
     if [[ "$when" =~ $uploadConditions ]]; then
       local alreadyOnS3
       alreadyOnS3=$(s3Exists "$key")
@@ -175,7 +176,7 @@ function saveCache {
         echo "Uploading new cache for key: $key"
       elif [[ "$overwrite" == "true" ]]; then
         echo "Overwriting existing cache for key: $key"
-      else 
+      else
         echo "Cache already exists (and will not be updated) for key: $key"
         continue
       fi
@@ -203,11 +204,11 @@ function restoreCache {
       echo "No restore config found, skipping"
       return
   fi
-  
+
   local tempFile
   tempFile=$(makeTempFile)
   getCacheItemsForRestore "$restoreConfig" > "$tempFile"
-  
+
   local lineNumber=0
   while read -r cacheItemKeyTemplates
   do
@@ -221,7 +222,7 @@ function restoreCache {
       local cacheKey
       cacheItemKeyTemplateDecoded=$(echo "$cacheItemKeyTemplate" | base64 -d)
       cacheKey=$(getCacheKey "$cacheItemKeyTemplateDecoded")
-      
+
       # Only check if cache exists on S3 if "restore_dry_run: true"
       if [[ "${BUILDKITE_PLUGIN_S3_CACHE_RESTORE_DRY_RUN:-}" =~ ^(true)$ ]]; then
         isRestored=$(s3Exists "$cacheKey")
